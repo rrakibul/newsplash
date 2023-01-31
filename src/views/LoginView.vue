@@ -1,14 +1,19 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, provide } from "vue";
 import { useValidation } from "../composables/useValidation";
+import { useStorage } from "../composables/useStorage";
+import { useCounterStore } from "../stores/CounterStore";
 
-let { validate } = useValidation();
+let title = ref("");
+let email = useStorage("email");
+let password = ref();
+let counter = useCounterStore();
 
-const title = ref("");
-const form = ref({
-  email: "",
-  password: "",
-});
+let validation = useValidation();
+
+validation.rules.value = {
+  email: "required|min:2",
+};
 
 onMounted(function () {
   title.value = "Login Page";
@@ -17,22 +22,23 @@ onMounted(function () {
 
 function submit() {
   console.log("submitted");
+  //console.log(email.value);
+  //console.log(password.value);
 
-  validate({
-    "form.email": "required|min:2",
-    "form.password": "required|max:5",
-  });
+  validation.validate();
 }
 </script>
 
 <template>
   <div>
     <!-- This is an example component -->
-
+    <button @click="counter.increment()" :disabled="!counter.remaining">
+      Increment ({{ counter.remaining }} Remaining)
+    </button>
     <div class="max-w-2xl mx-auto bg-white p-16">
       <div class="mb-6">
         <h4 class="font-medium leading-tight text-3xl mt-0 text-green-600">
-          {{ title }}
+          {{ $globalHelpers.limitTo(title, 4) }}
         </h4>
       </div>
       <form @submit.prevent="submit" novalidate>
@@ -47,8 +53,13 @@ function submit() {
             id="email"
             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
             placeholder="john.doe@company.com"
-            v-model="form.email"
+            v-model="email"
           />
+          <p class="mt-2 text-sm text-green-600 dark:text-green-500">
+            <span class="font-medium" :v-if="validation.formError('email')">
+              {{ validation.formError("email") }}
+            </span>
+          </p>
         </div>
         <div class="mb-6">
           <label
@@ -61,7 +72,7 @@ function submit() {
             id="password"
             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
             placeholder="•••••••••"
-            v-model="form.password"
+            v-model="password"
           />
         </div>
         <button

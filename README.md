@@ -33,3 +33,8 @@ npm run build
 ```sh
 npm run lint
 ```
+
+### References
+
+Pinia
+1. https://www.vuemastery.com/blog/refresh-proof-your-pinia-stores/

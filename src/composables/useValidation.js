@@ -1,35 +1,41 @@
-export function useValidation() {
-  function validate(rules) {
-    // let rules = this.rules();
-    this.errors = [];
+import {reactive, ref} from "vue";
 
-    for (let key in rules) {
-      let ruleSet = rules[key];
+export function useValidation() {
+  let rules = ref({});
+  let errors = ref({});
+
+  function validate() {
+    for (let key in rules.value) {
+      let ruleSet = rules.value[key];
 
       ruleSet.split("|").forEach(
         function (value) {
           if (value === "required") {
-            if (!this.requiredRuleCheck(this.propValue(key))) {
-              this.errors[key] = key + " is required";
+            if (!requiredRuleCheck(propValue(key))) {
+              errors[key] = key + " is required";
             }
           }
 
           if (value.toLowerCase().includes("min:")) {
             let parts = value.split(":");
-            if (!this.minRuleCheck(this.propValue(key), parts[1])) {
-              this.errors[key] = key + " minimum range: " + parts[1];
+            if (!minRuleCheck(propValue(key), parts[1])) {
+              errors[key] = key + " minimum range: " + parts[1];
             }
           }
 
           if (value.toLowerCase().includes("max:")) {
             let parts = value.split(":");
-            if (!this.maxRuleCheck(this.propValue(key), parts[1])) {
-              this.errors[key] = key + " maximum range: " + parts[1];
+            if (!maxRuleCheck(propValue(key), parts[1])) {
+              errors[key] = key + " maximum range: " + parts[1];
             }
           }
         }.bind(this)
       );
     }
+  }
+
+  function formError(name) {
+    return errors[name];
   }
 
   function propValue(name) {
@@ -60,5 +66,5 @@ export function useValidation() {
     return value.length <= limit;
   }
 
-  return { validate }
+  return { rules, formError, validate };
 }
