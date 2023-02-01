@@ -1,19 +1,17 @@
 <script setup>
-import { ref, onMounted, provide } from "vue";
+import { ref, onMounted } from "vue";
 import { useValidation } from "../composables/useValidation";
 import { useStorage } from "../composables/useStorage";
-import { useCounterStore } from "../stores/CounterStore";
 
 let title = ref("");
 let email = useStorage("email");
 let password = ref();
-let counter = useCounterStore();
 
 let validation = useValidation();
 
 validation.setOptions(
   {
-    email: "min:3",
+    email: "required|min:3",
     password: "required|min:2|max:5",
   },
   { email, password },
@@ -25,29 +23,22 @@ validation.setOptions(
 );
 
 onMounted(function () {
-  title.value = "Login Page";
-  console.log("mounted");
+  title.value = "Login";
 });
 
 function submit() {
-  console.log("submitted");
-  //console.log(email.value);
-  //console.log(password.value);
-
-  validation.validate();
+  if (validation.validate()) {
+    console.log("validate success");
+  }
 }
 </script>
 
 <template>
   <div>
-    <!-- This is an example component -->
-    <button @click="counter.increment()" :disabled="!counter.remaining">
-      Increment ({{ counter.remaining }} Remaining)
-    </button>
     <div class="max-w-2xl mx-auto bg-white p-16">
       <div class="mb-6">
         <h4 class="font-medium leading-tight text-3xl mt-0 text-green-600">
-          {{ $globalHelpers.limitTo(title, 4) }}
+          {{ title }}
         </h4>
       </div>
       <form @submit.prevent="submit" novalidate>
@@ -65,8 +56,8 @@ function submit() {
             v-model="email"
           />
           <p class="mt-2 text-sm text-red-600 dark:text-red-500">
-            <span class="font-medium" :v-if="validation.formError('email')">
-              {{ validation.formError("email") }}
+            <span class="font-medium" :v-if="validation.hasFieldError('email')">
+              {{ validation.fieldError("email") }}
             </span>
           </p>
         </div>
@@ -84,8 +75,8 @@ function submit() {
             v-model="password"
           />
           <p class="mt-2 text-sm text-red-600 dark:text-red-500">
-            <span class="font-medium" :v-if="validation.formError('password')">
-              {{ validation.formError("password") }}
+            <span class="font-medium" :v-if="validation.hasFieldError('password')">
+              {{ validation.fieldError("password") }}
             </span>
           </p>
         </div>
