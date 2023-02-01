@@ -1,70 +1,119 @@
-import {reactive, ref} from "vue";
+import { ref } from "vue";
 
 export function useValidation() {
-  let rules = ref({});
+  let rules = {};
+  let fields = {};
+  let messages = {};
   let errors = ref({});
 
+  function setOptions(_rules = {}, _fields = {}, _messages = {}) {
+    rules = _rules;
+    fields = _fields;
+    messages = _messages;
+  }
+
   function validate() {
-    for (let key in rules.value) {
-      let ruleSet = rules.value[key];
+    errors.value = {};
 
-      ruleSet.split("|").forEach(
-        function (value) {
-          if (value === "required") {
-            if (!requiredRuleCheck(propValue(key))) {
-              errors[key] = key + " is required";
+    for (let key in rules) {
+      let ruleSet = rules[key];
+
+      ruleSet.split("|").forEach(function (value) {
+        if (value === "required") {
+          if (isEmpty(fields[key].value)) {
+            if (messageExists(key + "|" + value)) {
+              errors.value[key] = messages[key + "|" + value];
+            } else {
+              errors.value[key] = key + " is required";
             }
           }
+        }
 
-          if (value.toLowerCase().includes("min:")) {
-            let parts = value.split(":");
-            if (!minRuleCheck(propValue(key), parts[1])) {
-              errors[key] = key + " minimum range: " + parts[1];
+        if (!ignoreErrorChecking(key) && value.toLowerCase().includes("min:")) {
+          let parts = value.split(":");
+          if (!minRuleCheck(fields[key].value, parts[1])) {
+            if (messageExists(key + "|" + value)) {
+              errors.value[key] = messages[key + "|" + value].replace(
+                "{value}",
+                parts[1]
+              );
+            } else {
+              errors.value[key] = key + " minimum range: " + parts[1];
             }
           }
+        }
 
-          if (value.toLowerCase().includes("max:")) {
-            let parts = value.split(":");
-            if (!maxRuleCheck(propValue(key), parts[1])) {
-              errors[key] = key + " maximum range: " + parts[1];
+        if (!ignoreErrorChecking(key) && value.toLowerCase().includes("max:")) {
+          let parts = value.split(":");
+          if (!maxRuleCheck(fields[key].value, parts[1])) {
+            if (messageExists(key + "|" + value)) {
+              errors.value[key] = messages[key + "|" + value].replace(
+                "{value}",
+                parts[1]
+              );
+            } else {
+              errors.value[key] = key + " maximum range: " + parts[1];
             }
           }
-        }.bind(this)
-      );
+        }
+      });
     }
+
+    return hasError();
+  }
+
+  function hasError() {
+    return !(Object.keys(errors.value).length === 0);
+  }
+
+  function ignoreErrorChecking(key) {
+    return objectKeyExists(errors.value, key);
+  }
+
+  function messageExists(key) {
+    return objectKeyExists(messages, key);
+  }
+
+  function objectKeyExists(obj, key) {
+    return Object.keys(obj).indexOf(key) !== -1;
   }
 
   function formError(name) {
-    return errors[name];
+    return errors.value[name];
   }
 
-  function propValue(name) {
-    let parts = name.split(".");
+  function isEmpty(value) {
+    return !(value !== null && value !== undefined && value.length >= 1);
+  }
 
-    //todo: make it dynamic
-    switch (parts.length) {
-      case 2:
-        return this.$data[parts[0]][parts[1]];
-      case 3:
-        return this.$data[parts[0]][parts[1]][parts[2]];
-      case 4:
-        return this.$data[parts[0]][parts[1]][parts[2]][parts[3]];
-      default:
-        return null;
+  function rangeCheck(rule, limit, value) {
+    if (value === null || value === undefined) {
+      return false;
+    }
+
+    switch (rule) {
+      case "min":
+        return value.length >= limit;
+      case "max":
+        return value.length <= limit;
     }
   }
 
-  function requiredRuleCheck(value) {
-    return value.length >= 1;
-  }
-
   function minRuleCheck(value, limit) {
+    if (value === null || value === undefined) {
+      return false;
+    }
+
     return value.length >= limit;
   }
 
   function maxRuleCheck(value, limit) {
+    if (value === null || value === undefined) {
+      return false;
+    }
+
     return value.length <= limit;
   }
 
-  return { rules, formError, validate };
+  return { rules, formError, validate, setOptions };
 }

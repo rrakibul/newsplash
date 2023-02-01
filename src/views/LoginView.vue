@@ -11,9 +11,18 @@ let counter = useCounterStore();
 
 let validation = useValidation();
 
-validation.rules.value = {
-  email: "required|min:2",
-};
+validation.setOptions(
+  {
+    email: "min:3",
+    password: "required|min:2|max:5",
+  },
+  { email, password },
+  {
+    "email|required": "this field is required",
+    "email|min:3": "min {value} characters required",
+    "password|max:5": "can't exceed {value} characters",
+  }
+);
 
 onMounted(function () {
   title.value = "Login Page";
@@ -55,7 +64,7 @@ function submit() {
             placeholder="john.doe@company.com"
             v-model="email"
           />
-          <p class="mt-2 text-sm text-green-600 dark:text-green-500">
+          <p class="mt-2 text-sm text-red-600 dark:text-red-500">
             <span class="font-medium" :v-if="validation.formError('email')">
               {{ validation.formError("email") }}
             </span>
@@ -74,6 +83,11 @@ function submit() {
             placeholder="•••••••••"
             v-model="password"
           />
+          <p class="mt-2 text-sm text-red-600 dark:text-red-500">
+            <span class="font-medium" :v-if="validation.formError('password')">
+              {{ validation.formError("password") }}
+            </span>
+          </p>
         </div>
         <button
           type="submit"
