@@ -1,33 +1,33 @@
 <script setup>
-import { RouterLink, RouterView } from "vue-router";
-import HelloWorld from "./components/HelloWorld.vue";
-import TheNav from "./components/TheNav.vue";
+import {onMounted, ref} from "vue";
+import {useRouter} from "vue-router";
+
+let user = ref({});
+let isLoggedIn = ref(false);
+let router = useRouter();
+
+onMounted(() => {
+  let _user = JSON.parse(localStorage.getItem("userData"));
+  if (_user) {
+    isLoggedIn.value = true;
+  }
+});
+
+function logout() {
+  localStorage.removeItem("userData");
+  isLoggedIn.value = false;
+  router.push("/login")
+}
 </script>
 
 <template>
-  <header>
-    <img
-      alt="Vue logo"
-      class="logo"
-      src="@/assets/logo.svg"
-      width="125"
-      height="125"
-    />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-
-      <the-nav/>
-<!--      <nav>-->
-<!--        <RouterLink to="/">Home</RouterLink>-->
-<!--        <RouterLink to="/about">About</RouterLink>-->
-<!--        <RouterLink to="/login">Login</RouterLink>-->
-<!--        <RouterLink to="/signup">Sign Up</RouterLink>-->
-<!--      </nav>-->
-    </div>
-  </header>
-
-  <RouterView />
+  <nav>
+    <RouterLink to="/">Home</RouterLink>
+    <RouterLink to="/about">About</RouterLink>
+    <RouterLink to="/signup" v-if="!isLoggedIn">Sign Up</RouterLink>
+    <RouterLink to="/login" v-if="!isLoggedIn">Login</RouterLink>
+    <a @click.prevent="logout()" class="cursor-pointer" v-if="isLoggedIn">Logout</a>
+  </nav>
 </template>
 
 <style scoped>

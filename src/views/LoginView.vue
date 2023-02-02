@@ -2,12 +2,14 @@
 import { ref, onMounted } from "vue";
 import { useValidation } from "../composables/useValidation";
 import { useStorage } from "../composables/useStorage";
+import { useRouter } from "vue-router";
+
+let validation = useValidation();
+let router = useRouter();
 
 let title = ref("");
 let email = useStorage("email");
 let password = ref();
-
-let validation = useValidation();
 
 validation.setOptions(
   {
@@ -28,7 +30,10 @@ onMounted(function () {
 
 function submit() {
   if (validation.validate()) {
-    console.log("validate success");
+    if (email.value === "rakibul@figlab.io" && password.value === "123") {
+      localStorage.setItem("userData", JSON.stringify({ name: "rakibul" }));
+      router.push("/");
+    }
   }
 }
 </script>
@@ -75,7 +80,10 @@ function submit() {
             v-model="password"
           />
           <p class="mt-2 text-sm text-red-600 dark:text-red-500">
-            <span class="font-medium" :v-if="validation.hasFieldError('password')">
+            <span
+              class="font-medium"
+              :v-if="validation.hasFieldError('password')"
+            >
               {{ validation.fieldError("password") }}
             </span>
           </p>
