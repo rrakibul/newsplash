@@ -11,6 +11,7 @@ export function useValidation() {
       max: "Maximum range {value}",
       email: "This is not a valid email address",
       alphanumeric: "Only alphabet (A-Z or a-z) or any number (0-9) is allowed",
+      confirm_password: "Password does not match with confirm password",
     };
 
   function setOptions(_rules = {}, _fields = {}, _messages = {}) {
@@ -49,15 +50,13 @@ export function useValidation() {
         }
 
         if (!ignoreErrorChecking(key) && value.toLowerCase().includes("min:")) {
-          let parts = value.split(":");
-          if (!rangeCheck("min", parts[1], fields[key].value)) {
+          if (!rangeCheck("min", value, fields[key].value)) {
             handleErrorMessage(key, value);
           }
         }
 
         if (!ignoreErrorChecking(key) && value.toLowerCase().includes("max:")) {
-          let parts = value.split(":");
-          if (!rangeCheck("max", parts[1], fields[key].value)) {
+          if (!rangeCheck("max", value, fields[key].value)) {
             handleErrorMessage(key, value);
           }
         }
@@ -73,6 +72,15 @@ export function useValidation() {
           value.toLowerCase() === "alphanumeric"
         ) {
           if (!isAlphanumeric(fields[key].value)) {
+            handleErrorMessage(key, value);
+          }
+        }
+
+        if (
+          !ignoreErrorChecking(key) &&
+          value.toLowerCase().includes("confirm_password:")
+        ) {
+          if (!confirmPassword(value, fields[key].value)) {
             handleErrorMessage(key, value);
           }
         }
@@ -102,16 +110,17 @@ export function useValidation() {
     return !(value !== null && value !== undefined && value.length >= 1);
   }
 
-  function rangeCheck(rule, limit, value) {
+  function rangeCheck(rule, ruleDef, value) {
     if (value === null || value === undefined) {
       return false;
     }
 
+    let parts = ruleDef.split(":");
     switch (rule) {
       case "min":
-        return minRuleCheck(value, limit);
+        return minRuleCheck(value, parts[1]);
       case "max":
-        return maxRuleCheck(value, limit);
+        return maxRuleCheck(value, parts[1]);
     }
   }
 
@@ -127,12 +136,23 @@ export function useValidation() {
     return /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(value);
   }
 
+  function confirmPassword(ruleDef, value) {
+    let parts = ruleDef.split(":");
+
+    if (!objectKeyExists(fields, parts[1])) {
+      return;
+    }
+
+    return value === fields[parts[1]].value;
+  }
+
   function isAlphanumeric(value) {
     return /^[0-9a-zA-Z]+$/.test(value);
   }
 
   function handleErrorMessage(key, value) {
     let parts = value.split(":");
+
     if (messageExists(key + "|" + value)) {
       errors.value[key] = messages[key + "|" + value].replace(
         "{value}",
