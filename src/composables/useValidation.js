@@ -6,9 +6,11 @@ export function useValidation() {
     messages = {},
     errors = ref({}),
     defaultMessages = {
-      required: "this is required",
-      min: "min range {value}",
-      max: "max range {value}",
+      required: "This field is required",
+      min: "Minimum range {value}",
+      max: "Maximum range {value}",
+      email: "This is not a valid email address",
+      alphanumeric: "Only alphabet (A-Z or a-z) or any number (0-9) is allowed",
     };
 
   function setOptions(_rules = {}, _fields = {}, _messages = {}) {
@@ -35,8 +37,12 @@ export function useValidation() {
     for (let key in rules) {
       let ruleSet = rules[key];
 
+      if (!objectKeyExists(fields, key)) {
+        continue;
+      }
+
       ruleSet.split("|").forEach(function (value) {
-        if (value === "required") {
+        if (value.toLowerCase() === "required") {
           if (isEmpty(fields[key].value)) {
             handleErrorMessage(key, value);
           }
@@ -52,6 +58,21 @@ export function useValidation() {
         if (!ignoreErrorChecking(key) && value.toLowerCase().includes("max:")) {
           let parts = value.split(":");
           if (!rangeCheck("max", parts[1], fields[key].value)) {
+            handleErrorMessage(key, value);
+          }
+        }
+
+        if (!ignoreErrorChecking(key) && value.toLowerCase() === "email") {
+          if (!isValidEmail(fields[key].value)) {
+            handleErrorMessage(key, value);
+          }
+        }
+
+        if (
+          !ignoreErrorChecking(key) &&
+          value.toLowerCase() === "alphanumeric"
+        ) {
+          if (!isAlphanumeric(fields[key].value)) {
             handleErrorMessage(key, value);
           }
         }
@@ -100,6 +121,14 @@ export function useValidation() {
 
   function maxRuleCheck(value, limit) {
     return value.length <= limit;
+  }
+
+  function isValidEmail(value) {
+    return /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(value);
+  }
+
+  function isAlphanumeric(value) {
+    return /^[0-9a-zA-Z]+$/.test(value);
   }
 
   function handleErrorMessage(key, value) {
