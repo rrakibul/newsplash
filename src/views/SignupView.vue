@@ -1,97 +1,31 @@
-<script>
-export default {
-  data() {
-    return {
-      title: "",
-      form: {
-        firstName: "",
-        lastName: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-      },
-      errors: [],
-    };
+<script setup>
+import { ref } from "vue";
+import { useValidation } from "../composables/useValidation";
+import { useStorage } from "../composables/useStorage";
+
+let title = "Sign Up";
+let firstName = useStorage("firstName");
+let lastName = useStorage("lastName");
+let email = useStorage("email");
+let password = ref("");
+let confirmPassword = ref("");
+
+let validation = useValidation();
+validation.setOptions(
+  {
+    firstName: "required|min:2|alphanumeric",
+    lastName: "required|min:2",
+    email: "required|email",
+    password: "required|confirm_password:confirmPassword",
   },
-  mounted() {
-    this.title = "Sign Up";
-  },
-  methods: {
-    formError(name) {
-      if (this.errors[name] !== "undefined") {
-        return this.errors[name];
-      }
+  { firstName, lastName, email, password }
+);
 
-      return null;
-    },
-    rules() {
-      return {
-        "form.firstName": "required|min:2",
-        "form.lastName": "required|max:5",
-      };
-    },
-    validate() {
-      let rules = this.rules();
-      this.errors = [];
-
-      for (let key in rules) {
-        let ruleSet = rules[key];
-
-        ruleSet.split("|").forEach(
-          function (value) {
-            if (value === "required") {
-              if (!this.requiredRuleCheck(this.propValue(key))) {
-                this.errors[key] = key + " is required";
-              }
-            }
-
-            if (value.toLowerCase().includes("min:")) {
-              let parts = value.split(":");
-              if (!this.minRuleCheck(this.propValue(key), parts[1])) {
-                this.errors[key] = key + " minimum range: " + parts[1];
-              }
-            }
-
-            if (value.toLowerCase().includes("max:")) {
-              let parts = value.split(":");
-              if (!this.maxRuleCheck(this.propValue(key), parts[1])) {
-                this.errors[key] = key + " maximum range: " + parts[1];
-              }
-            }
-          }.bind(this)
-        );
-      }
-    },
-    propValue(name) {
-      let parts = name.split(".");
-
-      //todo: make it dynamic
-      switch (parts.length) {
-        case 2:
-          return this.$data[parts[0]][parts[1]];
-        case 3:
-          return this.$data[parts[0]][parts[1]][parts[2]];
-        case 4:
-          return this.$data[parts[0]][parts[1]][parts[2]][parts[3]];
-        default:
-          return null;
-      }
-    },
-    requiredRuleCheck(value) {
-      return value.length >= 1;
-    },
-    minRuleCheck(value, limit) {
-      return value.length >= limit;
-    },
-    maxRuleCheck(value, limit) {
-      return value.length <= limit;
-    },
-    submit() {
-      this.validate();
-      console.log(this.errors);
-    },
-  },
-};
+function submit() {
+  if (validation.validate()) {
+    console.log("validation success");
+  }
+}
 </script>
 
 <template>
@@ -104,7 +38,7 @@ export default {
         </h4>
         <h5>It's quick and easy.</h5>
       </div>
-      <form @submit.prevent="submit">
+      <form @submit.prevent="submit" novalidate>
         <div class="grid gap-6 mb-6 lg:grid-cols-2">
           <div>
             <label
@@ -114,14 +48,17 @@ export default {
             >
             <input
               type="text"
-              v-model="form['firstName']"
+              v-model="firstName"
               id="first_name"
               class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
               placeholder="John"
             />
-            <p class="mt-2 text-sm text-green-600 dark:text-green-500">
-              <span class="font-medium" :v-if="formError('form.firstName')">
-                {{ formError("form.firstName") }}
+            <p class="mt-2 text-sm text-red-600 dark:text-red-500">
+              <span
+                class="font-medium"
+                :v-if="validation.hasFieldError('firstName')"
+              >
+                {{ validation.fieldError("firstName") }}
               </span>
             </p>
           </div>
@@ -133,16 +70,18 @@ export default {
             >
             <input
               type="text"
-              v-model="form['lastName']"
+              v-model="lastName"
               id="last_name"
               class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
               placeholder="Doe"
             />
-            <p
-              class="mt-2 text-sm text-red-600 dark:text-red-500"
-              :v-if="formError('form.lastName')"
-            >
-              <span class="font-medium">{{ formError("form.lastName") }}</span>
+            <p class="mt-2 text-sm text-red-600 dark:text-red-500">
+              <span
+                class="font-medium"
+                :v-if="validation.hasFieldError('lastName')"
+              >
+                {{ validation.fieldError("lastName") }}
+              </span>
             </p>
           </div>
         </div>
@@ -155,58 +94,69 @@ export default {
           <input
             type="email"
             id="email"
+            v-model="email"
             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
             placeholder="john.doe@company.com"
             required
           />
+          <p class="mt-2 text-sm text-red-600 dark:text-red-500">
+            <span class="font-medium" :v-if="validation.hasFieldError('email')">
+              {{ validation.fieldError("email") }}
+            </span>
+          </p>
         </div>
-        <!--        <div class="mb-6">-->
-        <!--          <label-->
-        <!--            for="password"-->
-        <!--            class="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-300"-->
-        <!--            >Password</label-->
-        <!--          >-->
-        <!--          <input-->
-        <!--            type="password"-->
-        <!--            id="password"-->
-        <!--            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"-->
-        <!--            placeholder="•••••••••"-->
-        <!--            required-->
-        <!--          />-->
-        <!--        </div>-->
-        <!--        <div class="mb-6">-->
-        <!--          <label-->
-        <!--            for="confirm_password"-->
-        <!--            class="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-300"-->
-        <!--            >Confirm password</label-->
-        <!--          >-->
-        <!--          <input-->
-        <!--            type="password"-->
-        <!--            id="confirm_password"-->
-        <!--            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"-->
-        <!--            placeholder="•••••••••"-->
-        <!--            required-->
-        <!--          />-->
-        <!--        </div>-->
-        <!--        <div class="flex items-start mb-6">-->
-        <!--          <div class="flex items-center h-5">-->
-        <!--            <input-->
-        <!--              id="remember"-->
-        <!--              type="checkbox"-->
-        <!--              value=""-->
-        <!--              class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600 dark:ring-offset-gray-800"-->
-        <!--              required-->
-        <!--            />-->
-        <!--          </div>-->
-        <!--          <label-->
-        <!--            for="remember"-->
-        <!--            class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-400"-->
-        <!--            >I agree with the-->
-        <!--            <a href="#" class="text-blue-600 hover:underline dark:text-blue-500"-->
-        <!--              >terms and conditions</a-->
-        <!--            >.</label-->
-        <!--          >-->
-        <!--        </div>-->
+        <div class="mb-6">
+          <label
+            for="password"
+            class="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+            >Password</label
+          >
+          <input
+            type="password"
+            id="password"
+            v-model="password"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            placeholder="•••••••••"
+          />
+          <p class="mt-2 text-sm text-red-600 dark:text-red-500">
+            <span class="font-medium" :v-if="validation.hasFieldError('password')">
+              {{ validation.fieldError("password") }}
+            </span>
+          </p>
+        </div>
+        <div class="mb-6">
+          <label
+            for="confirm_password"
+            class="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+            >Confirm password</label
+          >
+          <input
+            type="password"
+            id="confirm_password"
+            v-model="confirmPassword"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            placeholder="•••••••••"
+          />
+        </div>
+        <div class="flex items-start mb-6">
+          <div class="flex items-center h-5">
+            <input
+              id="remember"
+              type="checkbox"
+              value=""
+              class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600 dark:ring-offset-gray-800"
+              required
+            />
+          </div>
+          <label
+            for="remember"
+            class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-400"
+            >I agree with the
+            <a href="#" class="text-blue-600 hover:underline dark:text-blue-500"
+              >terms and conditions</a
+            >.</label
+          >
+        </div>
         <button
           type="submit"
           class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
