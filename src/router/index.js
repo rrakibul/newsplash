@@ -3,9 +3,11 @@ import HomeView from "../views/HomeView.vue";
 import AboutView from "../views/AboutView.vue";
 import LoginView from "../views/LoginView.vue";
 import SignupView from "../views/SignupView.vue";
+import {useAuthStore} from "../stores/AuthStore";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
+  linkActiveClass: '',
   routes: [
     {
       path: "/",
@@ -28,6 +30,17 @@ const router = createRouter({
       component: SignupView,
     },
   ],
+});
+
+router.beforeEach(async (to) => {
+  const publicPages = ["/login", "/signup", "/about"];
+  const authRequired = !publicPages.includes(to.path);
+  const auth = useAuthStore();
+
+  if (authRequired && !auth.user) {
+    auth.returnUrl = to.fullPath;
+    return "/login";
+  }
 });
 
 export default router;

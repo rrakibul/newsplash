@@ -3,9 +3,12 @@ import { ref, onMounted } from "vue";
 import { useValidation } from "../composables/useValidation";
 import { useStorage } from "../composables/useStorage";
 import { useRouter } from "vue-router";
+import { useAuthStore } from "../stores/AuthStore";
 
 let validation = useValidation();
 let router = useRouter();
+let authStore = useAuthStore();
+let emit = defineEmits(["auth:login-success"]);
 
 let title = ref("");
 let email = useStorage("email");
@@ -31,8 +34,17 @@ onMounted(function () {
 function submit() {
   if (validation.validate()) {
     if (email.value === "rakibul@figlab.io" && password.value === "123") {
-      localStorage.setItem("userData", JSON.stringify({ name: "rakibul" }));
-      router.push("/");
+      authStore.setUser(
+        JSON.stringify({
+          id: 111,
+          name: "rakibul",
+          email: "rakibul@figlab.io",
+        })
+      );
+
+      emit("auth:login-success", {user: authStore.user});
+      window.location.href = "/";
+      // router.push("/");
     }
   }
 }
